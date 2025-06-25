@@ -1,0 +1,38 @@
+USE java_deepskillg;
+DELIMITER //
+
+CREATE PROCEDURE ProcessMonthlyInterest()
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE acc_id INT;
+    DECLARE curr_balance DECIMAL(10,2);
+
+    -- Cursor to get all savings accounts
+    DECLARE cur CURSOR FOR 
+        SELECT AccountID, Balance FROM Accounts WHERE AccountType = 'Savings';
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    OPEN cur;
+
+    read_loop: LOOP
+        FETCH cur INTO acc_id, curr_balance;
+
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- Add 1% interest to the balance
+        UPDATE Accounts
+        SET Balance = curr_balance + (curr_balance * 0.01),
+            LastModified = CURDATE()
+        WHERE AccountID = acc_id;
+    END LOOP;
+
+    CLOSE cur;
+END;
+//
+
+DELIMITER ;
+CALL ProcessMonthlyInterest();
+SELECT * FROM Accounts;

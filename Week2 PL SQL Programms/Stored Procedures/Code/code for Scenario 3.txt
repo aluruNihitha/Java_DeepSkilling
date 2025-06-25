@@ -1,0 +1,36 @@
+CREATE PROCEDURE TransferFunds(
+    IN fromAccountId INT,
+    IN toAccountId INT,
+    IN transferAmount DECIMAL(10,2)
+)
+BEGIN
+    DECLARE fromBalance DECIMAL(10,2);
+
+    -- Step 1: Get the source account's balance
+    SELECT Balance INTO fromBalance
+    FROM Accounts
+    WHERE AccountID = fromAccountId;
+
+    -- Step 2: Check if sufficient funds are available
+    IF fromBalance >= transferAmount THEN
+        -- Deduct from source account
+        UPDATE Accounts
+        SET Balance = Balance - transferAmount,
+            LastModified = CURDATE()
+        WHERE AccountID = fromAccountId;
+
+        -- Add to destination account
+        UPDATE Accounts
+        SET Balance = Balance + transferAmount,
+            LastModified = CURDATE()
+        WHERE AccountID = toAccountId;
+    ELSE
+        SELECT 'Insufficient Balance' AS Status;
+    END IF;
+END;
+//
+
+DELIMITER ;
+CALL TransferFunds(1, 2, 500);
+SELECT AccountID, Balance FROM Accounts;
+
